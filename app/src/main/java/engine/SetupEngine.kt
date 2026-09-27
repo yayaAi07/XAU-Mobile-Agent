@@ -8,6 +8,7 @@ import engine.analysis.MarketState
 import engine.analysis.PriceLocation
 import engine.analysis.StructureDirection
 import engine.analysis.TrendDirection
+import engine.safety.SafetyGate
 
 enum class SetupDirection {
     BUY,
@@ -27,6 +28,7 @@ data class Setup(
         require(confidence in 0..100) {
             "confidence must be between 0 and 100"
         }
+
         if (direction == SetupDirection.BUY) {
             require(stopLoss < entryPrice) {
                 "For BUY, stopLoss must be below entryPrice"
@@ -35,6 +37,7 @@ data class Setup(
                 "For BUY, takeProfit must be above entryPrice"
             }
         }
+
         if (direction == SetupDirection.SELL) {
             require(stopLoss > entryPrice) {
                 "For SELL, stopLoss must be above entryPrice"
@@ -55,7 +58,10 @@ object SetupEngine {
 
         val reasons = mutableListOf<String>()
 
-        val direction = resolveDirection(analysis, reasons)
+        val direction = resolveDirection(
+            analysis = analysis,
+            reasons = reasons
+        )
 
         if (direction == SetupDirection.NONE) {
             return Setup(
@@ -68,20 +74,61 @@ object SetupEngine {
             )
         }
 
-        val atrLikeRange = resolveRange(entryPrice, analysis)
+        val range = resolveRange(
+            entryPrice = entryPrice,
+            analysis = analysis
+        )
 
         val stopLoss: Double
         val takeProfit: Double
 
         if (direction == SetupDirection.BUY) {
-            stopLoss = entryPrice - atrLikeRange
-            takeProfit = entryPrice + atrLikeRange * 2.0
+            stopLoss = entryPrice - range
+            takeProfit = entryPrice + range * 2.0
         } else {
-            stopLoss = entryPrice + atrLikeRange
-            takeProfit = entryPrice - atrLikeRange * 2.0
+            stopLoss = entryPrice + range
+            takeProfit = entryPrice - range * 2.0
         }
 
         val confidence = resolveConfidence(analysis)
+
+        val risk = kotlin.math.abs(entryPrice - stopLoss)
+        val reward = kotlin.math.abs(takeProfit - entryPrice)
+
+        val riskRewardRatio =
+            if (risk > 0.0) {
+                reward / risk
+            } else {
+                Double.NaN
+            }
+
+        val safetyResult = SafetyGate.check(
+            hasValidSetup = true,
+            hasValidEntry = entryPrice.isFinite() && entryPrice > 0.0,
+            hasValidStop = stopLoss.isFinite() && stopLoss > 0.0,
+            hasValidTargets = takeProfit.isFinite() && takeProfit > 0.0,
+            riskRewardRatio = riskRewardRatio
+        )
+
+        if (!safetyResult.approved) {
+
+            reasons.add(
+                "Safety Gate rejected: ${safetyResult.reason}"
+            )
+
+            return Setup(
+                direction = SetupDirection.NONE,
+                entryPrice = entryPrice,
+                stopLoss = entryPrice,
+                takeProfit = entryPrice,
+                confidence = 0,
+                reasons = reasons
+            )
+        }
+
+        reasons.add(
+            "Safety Gate approved"
+        )
 
         return Setup(
             direction = direction,
@@ -98,11 +145,15 @@ object SetupEngine {
         reasons: MutableList<String>
     ): SetupDirection {
 
-        val trendUp = analysis.trend.direction == TrendDirection.UP
-        val trendDown = analysis.trend.direction == TrendDirection.DOWN
+        val trendUp =
+            analysis.trend.direction == TrendDirection.UP
+
+        val trendDown =
+            analysis.trend.direction == TrendDirection.DOWN
 
         val structureBullish =
             analysis.structure.direction == StructureDirection.BULLISH
+
         val structureBearish =
             analysis.structure.direction == StructureDirection.BEARISH
 
@@ -120,7 +171,7 @@ object SetupEngine {
         val sellAd =
             analysis.ad.type == ADType.SELL_AD
 
-        // شروط BUY
+        // BUY conditions
         if (
             trendUp &&
             structureBullish &&
@@ -131,10 +182,11 @@ object SetupEngine {
             reasons.add("Structure BULLISH")
             reasons.add("Location DISCOUNT")
             reasons.add("Buy AD detected")
+
             return SetupDirection.BUY
         }
 
-        // شروط SELL
+        // SELL conditions
         if (
             trendDown &&
             structureBearish &&
@@ -145,10 +197,11 @@ object SetupEngine {
             reasons.add("Structure BEARISH")
             reasons.add("Location PREMIUM")
             reasons.add("Sell AD detected")
+
             return SetupDirection.SELL
         }
 
-        // لا يوجد Setup
+        // No setup
         if (analysis.marketState == MarketState.UNCERTAIN) {
             reasons.add("Market state UNCERTAIN")
         } else {
@@ -162,7 +215,9 @@ object SetupEngine {
         entryPrice: Double,
         analysis: MarketAnalysisResult
     ): Double {
-        // نطاق مبسط: 0.5% من سعر الدخول كحد أدنى
+
+        // Simplified range:
+        // 0.5% of entry price as the base range.
         val base = entryPrice * 0.005
 
         val strengthFactor =
@@ -174,12 +229,15 @@ object SetupEngine {
     private fun resolveConfidence(
         analysis: MarketAnalysisResult
     ): Int {
+
         val weighted =
             analysis.trend.strength * 0.30 +
             analysis.structure.strength * 0.30 +
             analysis.location.strength * 0.20 +
             analysis.ad.strength * 0.20
 
-        return weighted.toInt().coerceIn(0, 100)
+        return weighted
+            .toInt()
+            .coerceIn(0, 100)
     }
 }
