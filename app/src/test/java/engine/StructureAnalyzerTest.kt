@@ -28,8 +28,7 @@ class StructureAnalyzerTest {
             )
         )
 
-        val result =
-            StructureAnalyzer.analyze(snapshot)
+        val result = StructureAnalyzer.analyze(snapshot)
 
         assertEquals(
             StructureDirection.UNCERTAIN,
@@ -44,22 +43,18 @@ class StructureAnalyzerTest {
     @Test
     fun bullish_structure_is_detected_when_higher_high_and_higher_low_exist() {
 
-        val h1 = bullishCandles(
-            lastClose = 108.0
-        )
-
-        val m15 = bullishCandles(
-            lastClose = 108.0
-        )
-
-        val snapshot =
-            createSnapshot(
-                h1 = h1,
-                m15 = m15
+        val snapshot = createSnapshot(
+            h1 = bullishCandles(
+                lastClose = 108.0,
+                timeframe = Timeframe.H1
+            ),
+            m15 = bullishCandles(
+                lastClose = 108.0,
+                timeframe = Timeframe.M15
             )
+        )
 
-        val result =
-            StructureAnalyzer.analyze(snapshot)
+        val result = StructureAnalyzer.analyze(snapshot)
 
         assertEquals(
             StructureDirection.BULLISH,
@@ -69,31 +64,24 @@ class StructureAnalyzerTest {
         assertFalse(result.hasBreakOfStructure)
         assertFalse(result.hasChangeOfCharacter)
 
-        assertEquals(
-            55,
-            result.strength
-        )
+        assertEquals(55, result.strength)
     }
 
     @Test
     fun bearish_structure_is_detected_when_lower_high_and_lower_low_exist() {
 
-        val h1 = bearishCandles(
-            lastClose = 97.0
-        )
-
-        val m15 = bearishCandles(
-            lastClose = 97.0
-        )
-
-        val snapshot =
-            createSnapshot(
-                h1 = h1,
-                m15 = m15
+        val snapshot = createSnapshot(
+            h1 = bearishCandles(
+                lastClose = 97.0,
+                timeframe = Timeframe.H1
+            ),
+            m15 = bearishCandles(
+                lastClose = 97.0,
+                timeframe = Timeframe.M15
             )
+        )
 
-        val result =
-            StructureAnalyzer.analyze(snapshot)
+        val result = StructureAnalyzer.analyze(snapshot)
 
         assertEquals(
             StructureDirection.BEARISH,
@@ -103,31 +91,24 @@ class StructureAnalyzerTest {
         assertFalse(result.hasBreakOfStructure)
         assertFalse(result.hasChangeOfCharacter)
 
-        assertEquals(
-            55,
-            result.strength
-        )
+        assertEquals(55, result.strength)
     }
 
     @Test
     fun bullish_break_of_structure_is_detected() {
 
-        val h1 = bullishCandles(
-            lastClose = 111.0
-        )
-
-        val m15 = bullishCandles(
-            lastClose = 111.0
-        )
-
-        val snapshot =
-            createSnapshot(
-                h1 = h1,
-                m15 = m15
+        val snapshot = createSnapshot(
+            h1 = bullishCandles(
+                lastClose = 111.0,
+                timeframe = Timeframe.H1
+            ),
+            m15 = bullishCandles(
+                lastClose = 111.0,
+                timeframe = Timeframe.M15
             )
+        )
 
-        val result =
-            StructureAnalyzer.analyze(snapshot)
+        val result = StructureAnalyzer.analyze(snapshot)
 
         assertEquals(
             StructureDirection.BULLISH,
@@ -137,31 +118,24 @@ class StructureAnalyzerTest {
         assertTrue(result.hasBreakOfStructure)
         assertFalse(result.hasChangeOfCharacter)
 
-        assertEquals(
-            70,
-            result.strength
-        )
+        assertEquals(70, result.strength)
     }
 
     @Test
     fun bearish_structure_with_bullish_break_is_change_of_character() {
 
-        val h1 = bearishCandles(
-            lastClose = 106.0
-        )
-
-        val m15 = bearishCandles(
-            lastClose = 106.0
-        )
-
-        val snapshot =
-            createSnapshot(
-                h1 = h1,
-                m15 = m15
+        val snapshot = createSnapshot(
+            h1 = bearishCandles(
+                lastClose = 106.0,
+                timeframe = Timeframe.H1
+            ),
+            m15 = bearishCandles(
+                lastClose = 106.0,
+                timeframe = Timeframe.M15
             )
+        )
 
-        val result =
-            StructureAnalyzer.analyze(snapshot)
+        val result = StructureAnalyzer.analyze(snapshot)
 
         assertEquals(
             StructureDirection.BEARISH,
@@ -171,31 +145,24 @@ class StructureAnalyzerTest {
         assertTrue(result.hasBreakOfStructure)
         assertTrue(result.hasChangeOfCharacter)
 
-        assertEquals(
-            80,
-            result.strength
-        )
+        assertEquals(80, result.strength)
     }
 
     @Test
     fun bullish_structure_with_bearish_break_is_change_of_character() {
 
-        val h1 = bullishCandles(
-            lastClose = 94.0
-        )
-
-        val m15 = bullishCandles(
-            lastClose = 94.0
-        )
-
-        val snapshot =
-            createSnapshot(
-                h1 = h1,
-                m15 = m15
+        val snapshot = createSnapshot(
+            h1 = bullishCandles(
+                lastClose = 94.0,
+                timeframe = Timeframe.H1
+            ),
+            m15 = bullishCandles(
+                lastClose = 94.0,
+                timeframe = Timeframe.M15
             )
+        )
 
-        val result =
-            StructureAnalyzer.analyze(snapshot)
+        val result = StructureAnalyzer.analyze(snapshot)
 
         assertEquals(
             StructureDirection.BULLISH,
@@ -205,37 +172,31 @@ class StructureAnalyzerTest {
         assertTrue(result.hasBreakOfStructure)
         assertTrue(result.hasChangeOfCharacter)
 
-        assertEquals(
-            80,
-            result.strength
-        )
+        assertEquals(80, result.strength)
     }
 
     @Test
     fun conflicting_h1_and_m15_structure_returns_uncertain() {
 
-        val snapshot =
-            createSnapshot(
-                h1 = bullishCandles(
-                    lastClose = 108.0
-                ),
-                m15 = bearishCandles(
-                    lastClose = 97.0
-                )
+        val snapshot = createSnapshot(
+            h1 = bullishCandles(
+                lastClose = 108.0,
+                timeframe = Timeframe.H1
+            ),
+            m15 = bearishCandles(
+                lastClose = 97.0,
+                timeframe = Timeframe.M15
             )
+        )
 
-        val result =
-            StructureAnalyzer.analyze(snapshot)
+        val result = StructureAnalyzer.analyze(snapshot)
 
         assertEquals(
             StructureDirection.UNCERTAIN,
             result.direction
         )
 
-        assertEquals(
-            30,
-            result.strength
-        )
+        assertEquals(30, result.strength)
     }
 
     private fun createSnapshot(
@@ -255,7 +216,8 @@ class StructureAnalyzerTest {
     }
 
     private fun bullishCandles(
-        lastClose: Double
+        lastClose: Double,
+        timeframe: Timeframe
     ): List<Candle> {
 
         val highs = listOf(
@@ -268,7 +230,7 @@ class StructureAnalyzerTest {
             110.0,
             106.0,
             107.0,
-            108.0
+            112.0
         )
 
         val lows = listOf(
@@ -281,7 +243,7 @@ class StructureAnalyzerTest {
             99.0,
             98.0,
             100.0,
-            101.0
+            90.0
         )
 
         val closes = List(10) { index ->
@@ -296,12 +258,13 @@ class StructureAnalyzerTest {
             highs = highs,
             lows = lows,
             closes = closes,
-            timeframe = Timeframe.H1
+            timeframe = timeframe
         )
     }
 
     private fun bearishCandles(
-        lastClose: Double
+        lastClose: Double,
+        timeframe: Timeframe
     ): List<Candle> {
 
         val highs = listOf(
@@ -314,7 +277,7 @@ class StructureAnalyzerTest {
             105.0,
             107.0,
             106.0,
-            104.0
+            112.0
         )
 
         val lows = listOf(
@@ -327,7 +290,7 @@ class StructureAnalyzerTest {
             102.0,
             101.0,
             95.0,
-            96.0
+            90.0
         )
 
         val closes = List(10) { index ->
@@ -342,7 +305,7 @@ class StructureAnalyzerTest {
             highs = highs,
             lows = lows,
             closes = closes,
-            timeframe = Timeframe.H1
+            timeframe = timeframe
         )
     }
 
@@ -352,6 +315,11 @@ class StructureAnalyzerTest {
         closes: List<Double>,
         timeframe: Timeframe
     ): List<Candle> {
+
+        require(
+            highs.size == lows.size &&
+                lows.size == closes.size
+        )
 
         return highs.indices.map { index ->
 
