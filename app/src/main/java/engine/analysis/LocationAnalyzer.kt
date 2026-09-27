@@ -2,240 +2,86 @@ package engine.analysis
 
 import engine.data.Candle
 import engine.data.MarketSnapshot
-import engine.data.Timeframe
-import org.junit.Assert.assertEquals
-import org.junit.Test
 
-class LocationAnalyzerTest {
+enum class PriceLocation {
+    PREMIUM,
+    DISCOUNT,
+    EQUILIBRIUM,
+    NEAR_P25,
+    NEAR_P75,
+    UNCERTAIN
+}
 
-    @Test
-    fun empty_h4_returns_uncertain() {
-        val snapshot = createSnapshot(
-            h4 = emptyList(),
-            h1 = candles(
-                low = 100.0,
-                high = 110.0,
-                close = 105.0,
-                timeframe = Timeframe.H1
+data class LocationResult(
+    val location: PriceLocation,
+    val strength: Int
+) {
+    init {
+        require(strength in 0..100) {
+            "strength must be between 0 and 100"
+        }
+    }
+}
+
+object LocationAnalyzer {
+
+    fun analyze(snapshot: MarketSnapshot): LocationResult {
+
+        val h4 = snapshot.h4
+        val h1 = snapshot.h1
+
+        if (h4.isEmpty() || h1.isEmpty()) {
+            return LocationResult(
+                PriceLocation.UNCERTAIN,
+                0
             )
-        )
+        }
 
-        val result = LocationAnalyzer.analyze(snapshot)
+        val h4High = h4.maxOf { it.high }
+        val h4Low = h4.minOf { it.low }
+        val h1High = h1.maxOf { it.high }
+        val h1Low = h1.minOf { it.low }
 
-        assertEquals(PriceLocation.UNCERTAIN, result.location)
-        assertEquals(0, result.strength)
-    }
+        val h4Range = h4High - h4Low
+        val h1Range = h1High - h1Low
 
-    @Test
-    fun empty_h1_returns_uncertain() {
-        val snapshot = createSnapshot(
-            h4 = candles(
-                low = 100.0,
-                high = 110.0,
-                close = 105.0,
-                timeframe = Timeframe.H4
-            ),
-            h1 = emptyList()
-        )
-
-        val result = LocationAnalyzer.analyze(snapshot)
-
-        assertEquals(PriceLocation.UNCERTAIN, result.location)
-        assertEquals(0, result.strength)
-    }
-
-    @Test
-    fun zero_h4_range_returns_uncertain() {
-        val snapshot = createSnapshot(
-            h4 = candles(
-                low = 100.0,
-                high = 100.0,
-                close = 100.0,
-                timeframe = Timeframe.H4
-            ),
-            h1 = candles(
-                low = 90.0,
-                high = 110.0,
-                close = 100.0,
-                timeframe = Timeframe.H1
+        if (h4Range <= 0.0 || h1Range <= 0.0) {
+            return LocationResult(
+                PriceLocation.UNCERTAIN,
+                0
             )
-        )
+        }
 
-        val result = LocationAnalyzer.analyze(snapshot)
+        val currentPrice = h1.last().close
 
-        assertEquals(PriceLocation.UNCERTAIN, result.location)
-        assertEquals(0, result.strength)
-    }
+        val positionInH4 =
+            (currentPrice - h4Low) / h4Range
 
-    @Test
-    fun zero_h1_range_returns_uncertain() {
-        val snapshot = createSnapshot(
-            h4 = candles(
-                low = 90.0,
-                high = 110.0,
-                close = 100.0,
-                timeframe = Timeframe.H4
-            ),
-            h1 = candles(
-                low = 100.0,
-                high = 100.0,
-                close = 100.0,
-                timeframe = Timeframe.H1
-            )
-        )
+        val positionInH1 =
+            (currentPrice - h1Low) / h1Range
 
-        val result = LocationAnalyzer.analyze(snapshot)
+        val averagePosition =
+            (positionInH4 + positionInH1) / 2.0
 
-        assertEquals(PriceLocation.UNCERTAIN, result.location)
-        assertEquals(0, result.strength)
-    }
+        val location = when {
+            averagePosition >= 0.75 -> PriceLocation.PREMIUM
+            averagePosition <= 0.25 -> PriceLocation.DISCOUNT
+            averagePosition in 0.45..0.55 -> PriceLocation.EQUILIBRIUM
+            else -> PriceLocation.UNCERTAIN
+        }
 
-    @Test
-    fun price_in_lower_quarter_returns_discount() {
-        val snapshot = createSnapshot(
-            h4 = candles(
-                low = 100.0,
-                high = 200.0,
-                close = 110.0,
-                timeframe = Timeframe.H4
-            ),
-            h1 = candles(
-                low = 100.0,
-                high = 200.0,
-                close = 110.0,
-                timeframe = Timeframe.H1
-            )
-        )
+        val strength = when (location) {
+            PriceLocation.PREMIUM -> 75
+            PriceLocation.DISCOUNT -> 75
+            PriceLocation.EQUILIBRIUM -> 50
+            PriceLocation.NEAR_P25 -> 60
+            PriceLocation.NEAR_P75 -> 60
+            PriceLocation.UNCERTAIN -> 20
+        }
 
-        val result = LocationAnalyzer.analyze(snapshot)
-
-        assertEquals(PriceLocation.DISCOUNT, result.location)
-        assertEquals(75, result.strength)
-    }
-
-    @Test
-    fun price_in_upper_quarter_returns_premium() {
-        val snapshot = createSnapshot(
-            h4 = candles(
-                low = 100.0,
-                high = 200.0,
-                close = 190.0,
-                timeframe = Timeframe.H4
-            ),
-            h1 = candles(
-                low = 100.0,
-                high = 200.0,
-                close = 190.0,
-                timeframe = Timeframe.H1
-            )
-        )
-
-        val result = LocationAnalyzer.analyze(snapshot)
-
-        assertEquals(PriceLocation.PREMIUM, result.location)
-        assertEquals(75, result.strength)
-    }
-
-    @Test
-    fun price_near_middle_returns_equilibrium() {
-        val snapshot = createSnapshot(
-            h4 = candles(
-                low = 100.0,
-                high = 200.0,
-                close = 150.0,
-                timeframe = Timeframe.H4
-            ),
-            h1 = candles(
-                low = 100.0,
-                high = 200.0,
-                close = 150.0,
-                timeframe = Timeframe.H1
-            )
-        )
-
-        val result = LocationAnalyzer.analyze(snapshot)
-
-        assertEquals(PriceLocation.EQUILIBRIUM, result.location)
-        assertEquals(50, result.strength)
-    }
-
-    @Test
-    fun price_between_discount_and_equilibrium_returns_uncertain() {
-        val snapshot = createSnapshot(
-            h4 = candles(
-                low = 100.0,
-                high = 200.0,
-                close = 130.0,
-                timeframe = Timeframe.H4
-            ),
-            h1 = candles(
-                low = 100.0,
-                high = 200.0,
-                close = 130.0,
-                timeframe = Timeframe.H1
-            )
-        )
-
-        val result = LocationAnalyzer.analyze(snapshot)
-
-        assertEquals(PriceLocation.UNCERTAIN, result.location)
-        assertEquals(20, result.strength)
-    }
-
-    @Test
-    fun price_between_equilibrium_and_premium_returns_uncertain() {
-        val snapshot = createSnapshot(
-            h4 = candles(
-                low = 100.0,
-                high = 200.0,
-                close = 170.0,
-                timeframe = Timeframe.H4
-            ),
-            h1 = candles(
-                low = 100.0,
-                high = 200.0,
-                close = 170.0,
-                timeframe = Timeframe.H1
-            )
-        )
-
-        val result = LocationAnalyzer.analyze(snapshot)
-
-        assertEquals(PriceLocation.UNCERTAIN, result.location)
-        assertEquals(20, result.strength)
-    }
-
-    private fun createSnapshot(
-        h4: List<Candle>,
-        h1: List<Candle>
-    ): MarketSnapshot {
-        return MarketSnapshot(
-            symbol = "XAUUSD",
-            capturedAt = System.currentTimeMillis(),
-            h4 = h4,
-            h1 = h1,
-            m15 = emptyList(),
-            m5 = emptyList(),
-            m1 = emptyList()
-        )
-    }
-
-    private fun candles(
-        low: Double,
-        high: Double,
-        close: Double,
-        timeframe: Timeframe
-    ): List<Candle> {
-        return listOf(
-            Candle(
-                timestamp = 1L,
-                open = close,
-                high = high,
-                low = low,
-                close = close,
-                volume = 100.0,
-                timeframe = timeframe
-            )
+        return LocationResult(
+            location = location,
+            strength = strength
         )
     }
 }
