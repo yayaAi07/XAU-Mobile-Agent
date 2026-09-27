@@ -205,7 +205,7 @@ class LocationAnalyzerTest {
         assertEquals(20, result.strength)
     }
 
-    private fun createSnapshot(
+        private fun createSnapshot(
         h4: List<Candle>,
         h1: List<Candle>
     ): MarketSnapshot {
@@ -225,3 +225,17 @@ class LocationAnalyzerTest {
         high: Double,
         close: Double,
         timeframe: Timeframe
+    ): List<Candle> {
+        return listOf(
+            Candle(
+                timestamp = 1L,
+                open = close,
+                high = high,
+                low = low,
+                close = close,
+                volume = 100.0,
+                timeframe = timeframe
+            )
+        )
+    }
+}
