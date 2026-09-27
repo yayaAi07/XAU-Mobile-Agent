@@ -50,7 +50,7 @@ data class Setup(
 
 object SetupEngine {
 
-    private const val MIN_SETUP_CONFIDENCE = 60
+    private const val MIN_SETUP_CONFIDENCE = 70
 
     /*
      * Base risk distance.
