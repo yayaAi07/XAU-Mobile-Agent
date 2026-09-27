@@ -68,9 +68,11 @@ class StateMachineIntegrationTest {
         ): ExecutionResult {
 
             return ExecutionResult(
+                decisionId = decision.decisionId,
                 result = ExecutionOutcome.ALLOWED,
                 reasonCodes = emptyList(),
-                executionConfidence = 100
+                executionConfidence = 100,
+                timestamp = now
             )
         }
     }
@@ -84,9 +86,11 @@ class StateMachineIntegrationTest {
         ): ExecutionResult {
 
             return ExecutionResult(
+                decisionId = decision.decisionId,
                 result = ExecutionOutcome.SIMULATED_PASS,
                 reasonCodes = emptyList(),
-                executionConfidence = 100
+                executionConfidence = 100,
+                timestamp = now
             )
         }
     }
@@ -98,7 +102,10 @@ class StateMachineIntegrationTest {
         ): HealthCheckResult {
 
             return HealthCheckResult(
-                allChecksPassed = true
+                ocrOk = true,
+                accessibilityOk = true,
+                screenRecognitionOk = true,
+                dataFreshnessOk = true
             )
         }
     }
