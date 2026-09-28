@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import engine.data.MarketDataRepository
 import engine.data.MockMarketDataSource
 import engine.decision.DecisionAnalysisAdapter
+import engine.integration.InMemorySetupContextStore
 
 class MainActivity : AppCompatActivity() {
 
@@ -23,10 +24,14 @@ class MainActivity : AppCompatActivity() {
             MockMarketDataSource()
         )
 
+    private val setupContextStore =
+        InMemorySetupContextStore()
+
     private val analysisAdapter =
         DecisionAnalysisAdapter(
             repository = repository,
-            symbol = "XAUUSD"
+            symbol = "XAUUSD",
+            setupContextStore = setupContextStore
         )
 
     override fun onCreate(savedInstanceState: Bundle?) {
