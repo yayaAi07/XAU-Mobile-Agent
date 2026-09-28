@@ -145,6 +145,36 @@ enum class ReasonCode(
     INTERFACE_VERIFIED(
         ReasonDomain.EXECUTION,
         ReasonPolicy.NON_CRITICAL
+    ),
+
+    SETUP_INVALID(
+        ReasonDomain.EXECUTION,
+        ReasonPolicy.CRITICAL
+    ),
+
+    ENTRY_INVALID(
+        ReasonDomain.EXECUTION,
+        ReasonPolicy.CRITICAL
+    ),
+
+    STOP_INVALID(
+        ReasonDomain.EXECUTION,
+        ReasonPolicy.CRITICAL
+    ),
+
+    TARGETS_INVALID(
+        ReasonDomain.EXECUTION,
+        ReasonPolicy.CRITICAL
+    ),
+
+    RISK_REWARD_BELOW_MINIMUM(
+        ReasonDomain.EXECUTION,
+        ReasonPolicy.CRITICAL
+    ),
+
+    SETUP_CONTEXT_MISSING(
+        ReasonDomain.EXECUTION,
+        ReasonPolicy.CRITICAL
     );
 
     val isBlocking: Boolean
