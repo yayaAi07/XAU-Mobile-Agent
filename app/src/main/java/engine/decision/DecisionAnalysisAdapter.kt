@@ -11,13 +11,15 @@ import engine.core.ReasonCode
 import engine.core.SourceTimeframe
 import engine.data.MarketDataRepository
 import engine.data.Timeframe
+import engine.integration.SetupContextStore
 import engine.setup.SetupDirection
 import engine.setup.SetupEngine
 import java.util.UUID
 
 class DecisionAnalysisAdapter(
     private val repository: MarketDataRepository,
-    private val symbol: String = "XAUUSD"
+    private val symbol: String = "XAUUSD",
+    private val setupContextStore: SetupContextStore
 ) : AnalysisEngine {
 
     override fun analyze(
@@ -72,8 +74,17 @@ class DecisionAnalysisAdapter(
         val expiresAt =
             createdAt + SourceTimeframe.M15.approxLifetimeMillis
 
+        val decisionId =
+            UUID.randomUUID().toString()
+
+        setupContextStore.put(
+            decisionId = decisionId,
+            setup = setup,
+            expiresAt = expiresAt
+        )
+
         return Decision(
-            decisionId = UUID.randomUUID().toString(),
+            decisionId = decisionId,
             parentDecisionId = parentDecisionId,
             symbol = snapshot.symbol,
             direction = direction,
