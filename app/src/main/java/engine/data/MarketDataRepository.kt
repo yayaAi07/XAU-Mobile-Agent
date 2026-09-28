@@ -9,7 +9,7 @@ class MarketDataRepository(
 
     fun getSnapshot(
         symbol: String,
-        nowMillis: Long
+        now: Long
     ): MarketSnapshot {
 
         val cached = cachedSnapshot
@@ -17,7 +17,7 @@ class MarketDataRepository(
         if (
             cached != null &&
             cached.symbol == symbol &&
-            nowMillis - cached.capturedAt < cacheDurationMillis
+            now - cached.capturedAt < cacheDurationMillis
         ) {
             return cached
         }
@@ -25,7 +25,7 @@ class MarketDataRepository(
         val freshSnapshot =
             source.getSnapshot(
                 symbol = symbol,
-                nowMillis = nowMillis
+                now = now
             )
 
         cachedSnapshot = freshSnapshot
@@ -35,30 +35,30 @@ class MarketDataRepository(
 
     fun getEvidence(
         symbol: String,
-        nowMillis: Long
+        now: Long
     ): MarketDataEvidence {
 
         val snapshot =
             getSnapshot(
                 symbol = symbol,
-                nowMillis = nowMillis
+                now = now
             )
 
         return MarketDataEvidenceBuilder.build(
             snapshot = snapshot,
-            nowMillis = nowMillis
+            nowMillis = now
         )
     }
 
     fun getValidatedEvidence(
         symbol: String,
-        nowMillis: Long
+        now: Long
     ): MarketDataValidationResult {
 
         val evidence =
             getEvidence(
                 symbol = symbol,
-                nowMillis = nowMillis
+                now = now
             )
 
         return MarketDataQualityValidator.validate(
